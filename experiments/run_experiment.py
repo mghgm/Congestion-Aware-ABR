@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # Copyright 2013-present Barefoot Networks, Inc.
 # Modified by mghgm (Mohsen Ghasemi) on March 15, 2025
 #
