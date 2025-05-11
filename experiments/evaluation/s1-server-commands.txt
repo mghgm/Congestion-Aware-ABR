@@ -1,0 +1,10 @@
+table_add int_record zero_out_int_record 0 => 1
+table_add int_record update_int_record 1 => 1
+table_add ipv4_lpm ipv4_forward 10.0.1.1/32 => 00:00:00:00:01:01 1
+table_add ipv4_lpm ipv4_forward 10.0.1.2/32 => 00:00:00:00:01:02 2
+table_add ipv4_lpm ipv4_forward 10.0.3.3/32 => 00:00:00:00:03:03 3
+table_add ipv4_lpm ipv4_forward 10.0.3.100/32 => 9a:23:a6:fa:11:b7 3
+table_add ipv4_lpm ipv4_forward 172.31.40.188/32 => 9a:23:a6:fa:11:b7 3
+
+set_queue_depth 64
+set_queue_rate 500
