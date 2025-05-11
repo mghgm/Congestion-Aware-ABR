@@ -14,8 +14,8 @@ bash evaluation/setup_server.sh
 ```
 Change values in `*-server-commands.txt`:
 ```bash
-sed -i 's/9a:23:a6:fa:11:b7/<VETH0-MAC>/g' *-server-commands.txt
-sed -i 's/172.31.40.188/<Client-Public-IP>/g' *-server-commands.txt
+sed -i 's/9a:23:a6:fa:11:b7/<VETH0-MAC>/g' evaluation/*-server-commands.txt
+sed -i 's/172.31.40.188/<Client-Public-IP>/g' evaluation/*-server-commands.txt
 ```
 
 ### Client
@@ -26,8 +26,8 @@ bash evaluation/setup_client.sh
 
 Change values in `*-client-commands.txt`:
 ```bash
-sed -i 's/f2:b5:d9:4f:b4:a7/<VETH0-MAC>/g' *-client-commands.txt
-sed -i 's/172.31.45.223/<Server-Public-IP>/g' *-client-commands.txt
+sed -i 's/f2:b5:d9:4f:b4:a7/<VETH0-MAC>/g' evaluation/*-client-commands.txt
+sed -i 's/172.31.45.223/<Server-Public-IP>/g' evaluation/*-client-commands.txt
 ```
 
 ## Test
