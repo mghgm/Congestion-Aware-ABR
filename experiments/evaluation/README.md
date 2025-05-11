@@ -10,7 +10,7 @@ p4c -b bmv2 /sdf/P4-TCP-INT/p4/int.p4 -o /sdf/compiled/int
 ### Server
 Set variables under `setup_server.sh` as desired and run:
 ```bash
-bash setup_server.sh
+bash evaluation/setup_server.sh
 ```
 Change values in `*-server-commands.txt`:
 ```bash
@@ -19,8 +19,9 @@ sed -i 's/172.31.40.188/<Client-Public-IP>/g' *-server-commands.txt
 ```
 
 ### Client
+Set variables under `setup_client.sh` as desired and run:
 ```bash
-chmod +x ./experiments/evaluation/setup_client.sh && ./experiments/evaluation/setup_client.sh
+bash evaluation/setup_client.sh
 ```
 
 Change values in `*-client-commands.txt`:
