@@ -275,17 +275,11 @@ control MyEgress(inout headers_t hdr,
         hdr.tcp_int_option.LinkSpd = 0x0;
         hdr.tcp_int_option.INTval = 0x00;
         hdr.tcp_int_option.HopID = swid;
-        hdr.tcp_int_option.HopLat = (bit<24>)standard_metadata.deq_timedelta;
+        hdr.tcp_int_option.HopLat = 0x000000;
         hdr.tcp_int_option.INTEcr = (bit<8>)standard_metadata.enq_qdepth;
         hdr.tcp_int_option.LnkSEcr = 0x0;
         hdr.tcp_int_option.HIDEcr = 0x0;
-        hdr.tcp_int_option.HopLatEcr = (bit<16>)(standard_metadata.enq_qdepth / 8);
-
-        // Consider the hop as a congested one
-        if (standard_metadata.enq_qdepth > QUEUE_DEPTH_TH) {
-            hdr.tcp_int_option.INTEcr = hdr.tcp_int_option.INTEcr + 0x1;
-        }
-
+        hdr.tcp_int_option.HopLatEcr = (bit<16>)(standard_metadata.deq_timedelta);
 
         log_msg("bib enq_depth = {} deq_depth = {} timedelta = {}", {standard_metadata.enq_qdepth, standard_metadata.deq_qdepth, standard_metadata.deq_timedelta});
 
@@ -303,9 +297,8 @@ control MyEgress(inout headers_t hdr,
         hdr.tcp_int_option.LnkSEcr = 0x0;
         hdr.tcp_int_option.HIDEcr = 0x0;
         hdr.tcp_int_option.HopLatEcr = 0x0000;
-        
 
-log_msg("bib enq_depth = {} deq_depth = {} timedelta = {}", {standard_metadata.enq_qdepth, standard_metadata.deq_qdepth, standard_metadata.deq_timedelta});
+        log_msg("bib enq_depth = {} deq_depth = {} timedelta = {}", {standard_metadata.enq_qdepth, standard_metadata.deq_qdepth, standard_metadata.deq_timedelta});
     }
 
     table int_record {
