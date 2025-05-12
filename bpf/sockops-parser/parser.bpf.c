@@ -20,7 +20,8 @@ struct __attribute__((packed)) int_option {
 struct {
     __uint(type, BPF_MAP_TYPE_QUEUE);
     __uint(max_entries, QUEUE_MAX_ENTRIES);
-    __type(value, struct int_option);
+    __uint(value_size, sizeof(parsed_opt));
+    __uint(key_size, 0);
 
 } int_map SEC(".maps");
 
@@ -48,13 +49,16 @@ int bpf_sockops_parse_tcp_options(struct bpf_sock_ops *skops) {
 	    if (res > 0) {
 
     	    struct int_option parsed_opt = {0};
+            parsed_opt.queue_depth = opt_buf[8];
+            parsed_opt.timedelta = *((__u16 *) &opt_buf[11]);
 
             // TODO: Put data into parsed_option from buf
             
-	        bpf_printk("found! enq_depth = %d timestamp = %lld\n", parsed_opt.INTEcr, bpf_ktime_get_boot_ns());
+    	    bpf_printk("found! enq_depth = %d timestamp = %lld\n", opt_buf[8] , bpf_ktime_get_boot_ns());
+            bpf_printk("parsed! queue_depth = %d timedelta = %d", parsed_opt.queue_depth, parsed_opt.timedelta);
 
             int rv;
-            rv = bpf_map_push_elem(&int_map, &parsed_opt);
+            rv = bpf_map_push_elem(&int_map, &parsed_opt, 0);
             if (rv < 0) {
                 bpf_printk("Failed to push to map: %d", rv);
                 return 1;
