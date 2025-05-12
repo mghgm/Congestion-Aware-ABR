@@ -28,7 +28,7 @@ struct {
 SEC("sockops")
 int bpf_sockops_parse_tcp_options(struct bpf_sock_ops *skops) {
     if (skops->op == BPF_SOCK_OPS_PASSIVE_ESTABLISHED_CB || skops->op == BPF_SOCK_OPS_ACTIVE_ESTABLISHED_CB) {
-        // Clear up the map
+        // TODO: Clear up the map
         
         int rv;
         rv = bpf_sock_ops_cb_flags_set(skops, BPF_SOCK_OPS_PARSE_ALL_HDR_OPT_CB_FLAG);
@@ -37,8 +37,7 @@ int bpf_sockops_parse_tcp_options(struct bpf_sock_ops *skops) {
             return 1;
         }
     }
-
-    if (skops->op == BPF_SOCK_OPS_PARSE_HDR_OPT_CB) {
+    else if (skops->op == BPF_SOCK_OPS_PARSE_HDR_OPT_CB) {
 	    char opt_buf[12] = {0x00, 0x00, 0x00, 0x00,
 	    		            0x00, 0x00, 0x00, 0x00,
 	    		            0x00, 0x00, 0x00, 0x00};
