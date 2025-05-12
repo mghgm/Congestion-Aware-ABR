@@ -14,8 +14,6 @@
 
 SEC("sockops")
 int bpf_sockops_parse_tcp_options(struct bpf_sock_ops *skops) {
-    bpf_printk("Boom!");
-
     if (skops->op == BPF_SOCK_OPS_PASSIVE_ESTABLISHED_CB || skops->op == BPF_SOCK_OPS_ACTIVE_ESTABLISHED_CB) {
         int rv;
         rv = bpf_sock_ops_cb_flags_set(skops, BPF_SOCK_OPS_WRITE_HDR_OPT_CB_FLAG);
@@ -39,8 +37,6 @@ int bpf_sockops_parse_tcp_options(struct bpf_sock_ops *skops) {
         }
     }
     else if (skops->op == BPF_SOCK_OPS_WRITE_HDR_OPT_CB) {
-        bpf_printk("doom doom\n");
-
         char opt[12] = {0x72, 0x0c, 0x00, 0x00,
                         0x00, 0x00, 0x00, 0x00,
                         0x00, 0x00, 0x00, 0x00};
