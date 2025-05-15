@@ -26,6 +26,16 @@ const (
 )
 
 func handleQeueu(w http.ResponseWriter, r *http.Request) {
+    w.Header().Set("Access-Control-Allow-Origin", "*")
+    w.Header().Set("Access-Control-Allow-Methods", "GET, OPTIONS")
+    w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
+
+    // Handle preflight (OPTIONS) request
+    if r.Method == http.MethodOptions {
+        w.WriteHeader(http.StatusOK)
+        return
+    }
+
 	ip := r.URL.Query().Get("ip")
 	portStr := r.URL.Query().Get("port")
 	if ip == "" || portStr == "" {
@@ -70,7 +80,7 @@ func popQueue(bpfMap *ebpf.Map) {
 func main() {
 	CongestionInfoQueue = make([]CongestionInfo, 0)
 
-	mapID := ebpf.MapID(11)
+	mapID := ebpf.MapID(15)
 	bpfMap, err := ebpf.NewMapFromID(mapID)
 	if err != nil {
 		log.Fatalf("Failed to open BPF map by ID: %v", err)
@@ -96,3 +106,4 @@ func main() {
 	http.HandleFunc("/queue", handleQeueu)
 	http.ListenAndServe(fmt.Sprintf(":%v", serverPort), nil)
 }
+
