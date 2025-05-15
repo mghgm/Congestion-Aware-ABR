@@ -2,82 +2,97 @@ package main
 
 import (
 	"encoding/binary"
-	"encoding/hex"
-	"errors"
+	"encoding/json"
 	"fmt"
 	"log"
-	"net"
 	"net/http"
+	"sync"
+	"time"
 
 	"github.com/cilium/ebpf"
 )
 
-func lookupBPFMap(bpfMap *ebpf.Map, ip string, port uint16) ([]byte, error) {
-	parsedIP := net.ParseIP(ip)
-	if parsedIP == nil {
-		return nil, errors.New("invalid IP address")
-	}
-
-	ipv4 := parsedIP.To4()
-	if ipv4 == nil {
-		return nil, errors.New("only IPv4 is supported")
-	}
-
-	var key [8]byte
-	binary.LittleEndian.PutUint32(key[:4], binary.BigEndian.Uint32(ipv4))
-	binary.LittleEndian.PutUint16(key[4:6], port)
-	binary.LittleEndian.PutUint16(key[6:], 0)
-
-	var value [12]byte
-	if err := bpfMap.Lookup(&key, &value); err != nil {
-		return nil, fmt.Errorf("failed to lookup key: %w", err)
-	}
-
-	return value[len(value)-4:len(value)-3], nil
+type CongestionInfo struct {
+	Timestamp 		uint64	`json:"timestamp"`
+	QueueLength 	uint8	`json:"queue_length"` 
+	Timedelta		uint16  `json:"timedelta"` 
 }
 
-func handleLookup(bpfMap *ebpf.Map) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		ip := r.URL.Query().Get("ip")
-		portStr := r.URL.Query().Get("port")
-		if ip == "" || portStr == "" {
-			http.Error(w, "Missing ip or port parameter", http.StatusBadRequest)
-			return
-		}
+var CongestionInfoQueue []CongestionInfo
+var QueueLock sync.Mutex
 
-		port, err := parsePort(portStr)
-		if err != nil {
-			http.Error(w, "Invalid port", http.StatusBadRequest)
-			return
-		}
+const (
+	serverPort = 9110
+)
 
-		value, err := lookupBPFMap(bpfMap, ip, port)
-		if err != nil {
-			http.Error(w, fmt.Sprintf("Lookup failed: %v", err), http.StatusInternalServerError)
-			return
-		}
-
-		w.WriteHeader(http.StatusOK)
-		w.Write([]byte(hex.EncodeToString(value)))
+func handleQeueu(w http.ResponseWriter, r *http.Request) {
+	ip := r.URL.Query().Get("ip")
+	portStr := r.URL.Query().Get("port")
+	if ip == "" || portStr == "" {
+		http.Error(w, "Missing ip or port parameter", http.StatusBadRequest)
+		return
 	}
+
+	QueueLock.Lock()
+	tmpQueue := CongestionInfoQueue[:]
+	CongestionInfoQueue = make([]CongestionInfo, 0)
+	QueueLock.Unlock()
+	
+	data, err := json.Marshal(tmpQueue)
+	if err != nil {
+		http.Error(w, "Faild pop queue", http.StatusBadGateway)
+	}
+
+	w.WriteHeader(http.StatusOK)
+	w.Write(data)
 }
 
-func parsePort(portStr string) (uint16, error) {
-	var port uint16
-	_, err := fmt.Sscanf(portStr, "%d", &port)
-	return port, err
+func popQueue(bpfMap *ebpf.Map) {
+	var err error
+	
+	var v [11]byte;
+	for err == nil {
+		err = bpfMap.LookupAndDelete(nil, &v)
+		if err == nil {
+			QueueLock.Lock()
+			CongestionInfoQueue = append(CongestionInfoQueue, CongestionInfo{
+				Timestamp: binary.LittleEndian.Uint64(v[:8]),
+				QueueLength: uint8(v[8]),
+				Timedelta: binary.LittleEndian.Uint16(v[9:]),
+			})
+			QueueLock.Unlock()
+		} else {
+			fmt.Printf("Err: %v\n", err)
+		}
+	}
 }
 
 func main() {
-	mapID := ebpf.MapID(23)
+	CongestionInfoQueue = make([]CongestionInfo, 0)
+
+	mapID := ebpf.MapID(11)
 	bpfMap, err := ebpf.NewMapFromID(mapID)
 	if err != nil {
 		log.Fatalf("Failed to open BPF map by ID: %v", err)
 	}
 	defer bpfMap.Close()
 
-	http.HandleFunc("/lookup", handleLookup(bpfMap))
-	log.Println("Server listening on :9100")
-	http.ListenAndServe(":9100", nil)
-}
+	ticker := time.NewTicker(100 * time.Millisecond)	
+	done := make(chan bool)
+	
+	go func() {
+		for {
+			select {
+			case <- done:
+				return
+			case <- ticker.C:
+				fmt.Println("Poping queue")
+				popQueue(bpfMap)
+			}
+		}
+	}()
+	
 
+	http.HandleFunc("/queue", handleQeueu)
+	http.ListenAndServe(fmt.Sprintf(":%v", serverPort), nil)
+}
