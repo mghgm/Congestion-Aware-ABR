@@ -70,6 +70,8 @@ Attach eBPF program:
 ./unload.sh || ./load.sh
 ```
 
+Setup load_generator
+
 ### Client
 ```bash
 sudo ./run_experiment.py --switch_json /sdf/compiled/int/int.json --topo ./evaluation/client-topology.json --pcap-dir /sdf/ --log-dir /sdf/
@@ -84,3 +86,7 @@ cd ~/client && systemd-run --unit=unified --scope --slice=dash_client python3 ru
 ```bash
 ./unload.sh || ./load.sh
 ```
+
+Find map ID with `sudo bpftool map list` and replace it in `pop-server/server.go`. Then `go run server.go` as root.
+
+
